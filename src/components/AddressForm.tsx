@@ -26,54 +26,12 @@ export default function AddressForm(props: Props) {
   const [isSuggesting, setIsSuggesting] = useState(false);
   const debounceRef = useRef<number | undefined>(undefined);
 
-  function CaptchaBox() {
-    const boxRef = useRef<HTMLDivElement | null>(null);
-    const siteKey = (import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined);
-    useEffect(() => {
-      if (!siteKey) return; // fallback handled by checkbox
-      // Load script once
-      const w = window as any;
-      const existing = document.querySelector('script[data-turnstile]') as HTMLScriptElement | null;
-      const ensureRender = () => {
-        if (!boxRef.current) return;
-        try {
-          w.turnstile?.render(boxRef.current, {
-            sitekey: siteKey,
-            theme: 'light',
-            callback: async (token: string) => {
-              try {
-                const base = (import.meta.env.VITE_SERVER_BASE_URL as string) || window.location.origin;
-                const res = await fetch(`${base}/turnstile/verify`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ token }),
-                });
-                const data: any = await res.json().catch(() => ({}));
-                onCaptchaOk(Boolean(data?.ok));
-              } catch {
-                onCaptchaOk(false);
-              }
-            },
-            'error-callback': () => onCaptchaOk(false),
-            'expired-callback': () => onCaptchaOk(false),
-          });
-        } catch {}
-      };
-      if (existing) {
-        existing.addEventListener('load', ensureRender, { once: true });
-        ensureRender();
-      } else {
-        const s = document.createElement('script');
-        s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-        s.async = true; s.defer = true; s.setAttribute('data-turnstile', '1');
-        s.addEventListener('load', ensureRender, { once: true });
-        document.head.appendChild(s);
-      }
-      return () => { /* widget auto-cleans up on unmount */ };
-    }, [siteKey]);
-    if (!siteKey) return null;
-    return <div ref={boxRef} />;
-  }
+  const [latLngText, setLatLngText] = useState((lat && lng) ? `${lat}, ${lng}` : '');
+  const [latLngError, setLatLngError] = useState<string>('');
+
+  useEffect(() => {
+    setLatLngText((lat && lng) ? `${lat}, ${lng}` : '');
+  }, [lat, lng]);
 
   useEffect(() => {
     const q = address.trim();
@@ -143,20 +101,28 @@ export default function AddressForm(props: Props) {
           </label>
           <input
             className="native-reset input-lg latlong-input"
-            value={(lat && lng) ? `${lat}, ${lng}` : ''}
+            value={latLngText}
             onChange={e => {
-              const v = e.target.value;
-              // Always allow typing by not resetting the input
-              if (v === '') {
+              setLatLngText(e.target.value);
+              setLatLngError('');
+            }}
+            onBlur={() => {
+              const v = latLngText.trim();
+              if (!v) {
                 onLat('');
                 onLng('');
+                setLatLngError('');
                 return;
               }
               const parsed = parseLatLng(v);
-              if (parsed) {
-                onLat(String(parsed.lat));
-                onLng(String(parsed.lng));
+              if (!parsed) {
+                setLatLngError('Invalid lat/long');
+                return;
               }
+              onLat(String(parsed.lat));
+              onLng(String(parsed.lng));
+              setLatLngText(`${parsed.lat}, ${parsed.lng}`);
+              setLatLngError('');
             }}
             placeholder={`37.322587, -122.025648 or 37°19'21.3"N 122°01'32.3"W`}
           />
@@ -206,16 +172,6 @@ export default function AddressForm(props: Props) {
         </div>
       </div>
       <div className="row" style={{display:'grid', gap:8, marginLeft:12}}>
-        <div>
-          {/* Cloudflare Turnstile if site key provided; otherwise fallback checkbox */}
-          <CaptchaBox />
-          {!import.meta.env.VITE_TURNSTILE_SITE_KEY ? (
-            <label style={{display:'flex', gap:8, alignItems:'center'}}>
-              <input type="checkbox" checked={captchaOk} onChange={e=>onCaptchaOk(e.target.checked)} />
-              <span>I'm not a robot</span>
-            </label>
-          ) : null}
-        </div>
         <div style={{display:'grid', gap:6}}>
           <div style={{display:'flex', gap:8, alignItems:'center'}}>
             <button className="btn btn-primary" onClick={onPreview} disabled={!captchaOk} title={!captchaOk ? 'Complete captcha to enable' : undefined} style={{ flex: 1, justifyContent: 'center' }}>
@@ -245,6 +201,7 @@ export default function AddressForm(props: Props) {
               Export PDF
             </button>
           </div>
+          {latLngError ? <div style={{color:'#b91c1c', fontSize:12}}>{latLngError}</div> : null}
           {status ? <div style={{color:'#6b7280', fontSize:12}}>{status}</div> : null}
         </div>
       </div>

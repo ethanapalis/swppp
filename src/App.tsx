@@ -7,6 +7,76 @@ import { providerAttribution } from './lib/attribution';
 
 export type Provider = 'open' | 'mapbox' | 'google' | 'bing';
 
+function TurnstileWidget({ onOk, onStatus }:{ onOk: (ok: boolean) => void; onStatus?: (msg: string) => void }) {
+  const siteKey = (import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined);
+  const boxRef = React.useRef<HTMLDivElement | null>(null);
+  const renderedRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (!siteKey) return;
+    if (renderedRef.current) return;
+    if (!boxRef.current) return;
+
+    const w = window as any;
+    const ensureRender = () => {
+      if (renderedRef.current) return;
+      if (!boxRef.current) return;
+      try {
+        const widgetId = w.turnstile?.render(boxRef.current, {
+          sitekey: siteKey,
+          theme: 'light',
+          callback: async (token: string) => {
+            try {
+              const base = (import.meta.env.VITE_SERVER_BASE_URL as string) || window.location.origin;
+              const res = await fetch(`${base}/turnstile/verify`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token }),
+              });
+              const data: any = await res.json().catch(() => ({}));
+              const ok = Boolean(data?.ok);
+              onOk(ok);
+              if (onStatus) onStatus(ok ? '' : 'Captcha verification failed');
+            } catch {
+              onOk(false);
+              if (onStatus) onStatus('Captcha verification failed');
+            }
+          },
+          'error-callback': () => { onOk(false); if (onStatus) onStatus('Captcha verification failed'); },
+          'expired-callback': () => { onOk(false); if (onStatus) onStatus('Captcha expired'); },
+        });
+        if (widgetId) renderedRef.current = true;
+      } catch {
+        onOk(false);
+      }
+    };
+
+    const existing = document.querySelector('script[data-turnstile]') as HTMLScriptElement | null;
+    if (existing) {
+      existing.addEventListener('load', ensureRender, { once: true });
+      ensureRender();
+    } else {
+      const s = document.createElement('script');
+      s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+      s.async = true;
+      s.defer = true;
+      s.setAttribute('data-turnstile', '1');
+      s.addEventListener('load', ensureRender, { once: true });
+      document.head.appendChild(s);
+    }
+  }, [siteKey, onOk]);
+
+  if (!siteKey) {
+    return (
+      <label style={{display:'flex', gap:8, alignItems:'center', justifyContent:'center'}}>
+        <input type="checkbox" onChange={e=>onOk(e.target.checked)} />
+        <span>I'm not a robot</span>
+      </label>
+    );
+  }
+  return <div ref={boxRef} />;
+}
+
 export default function App() {
   const [address, setAddress] = useState('');
   const [cityState, setCityState] = useState('');
@@ -52,6 +122,7 @@ export default function App() {
   return (
     <div className="app">
       <aside className="sidebar">
+        <div className="sidebar-title">SWPPP App A Generator</div>
         <div className="form-grid">
           <AddressForm
             address={address}
@@ -77,6 +148,9 @@ export default function App() {
             captchaOk={captchaOk}
             onCaptchaOk={setCaptchaOk}
           />
+        </div>
+        <div className="sidebar-bottom">
+          <TurnstileWidget onOk={setCaptchaOk} onStatus={setStatus} />
         </div>
       </aside>
       <main className="content">

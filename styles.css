@@ -125,7 +125,7 @@ button { cursor: pointer; }
 .toolbar { padding: var(--pad); display: flex; gap: 8px; align-items: center; border-bottom: 1px solid #e5e7eb; }
 .preview { flex: 1; padding: var(--pad); overflow: auto; background: #fafafa; }
 
-.sidebar-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; color: #111827; }
+.sidebar-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; color: #111827; margin-left: 12px; }
 .sidebar-bottom { margin-top: auto; display: flex; justify-content: center; padding-top: 10px; }
 
 .form-grid { display: grid; gap: 12px; }

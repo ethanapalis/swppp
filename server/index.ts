@@ -2,8 +2,13 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import puppeteer from 'puppeteer';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const PORT = 3001;
+const PORT = Number(process.env.PORT) || 3001;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors());
@@ -81,6 +86,14 @@ app.post('/export', async (req, res) => {
   } catch (e: any) {
     res.status(500).json({ error: e?.message || 'export failed' });
   }
+});
+
+// Serve built frontend (Vite dist) when deployed as a single Render service
+// Note: keep this AFTER API routes so it doesn't intercept /export etc.
+const distDir = path.resolve(__dirname, '../dist');
+app.use(express.static(distDir));
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(distDir, 'index.html'));
 });
 
 app.listen(PORT, () => {

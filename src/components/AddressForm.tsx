@@ -42,7 +42,8 @@ export default function AddressForm(props: Props) {
             theme: 'light',
             callback: async (token: string) => {
               try {
-                const res = await fetch('http://localhost:3001/turnstile/verify', {
+                const base = (import.meta.env.VITE_SERVER_BASE_URL as string) || 'http://localhost:3001';
+                const res = await fetch(`${base}/turnstile/verify`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ token }),

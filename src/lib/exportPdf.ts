@@ -4,7 +4,7 @@ import jsPDF from 'jspdf';
 function sleep(ms: number) { return new Promise(res => setTimeout(res, ms)); }
 
 async function tryServerExport(html: string): Promise<Blob | null> {
-  const base = (import.meta.env.VITE_SERVER_BASE_URL as string) || 'http://localhost:3001';
+  const base = (import.meta.env.VITE_SERVER_BASE_URL as string) || window.location.origin;
   try {
     const h = await fetch(`${base}/health`).then(r=>r.text()).catch(()=>null);
     if (h !== 'ok') return null;

@@ -40,7 +40,19 @@ export default function AddressForm(props: Props) {
           w.turnstile?.render(boxRef.current, {
             sitekey: siteKey,
             theme: 'light',
-            callback: () => onCaptchaOk(true),
+            callback: async (token: string) => {
+              try {
+                const res = await fetch('http://localhost:3001/turnstile/verify', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ token }),
+                });
+                const data: any = await res.json().catch(() => ({}));
+                onCaptchaOk(Boolean(data?.ok));
+              } catch {
+                onCaptchaOk(false);
+              }
+            },
             'error-callback': () => onCaptchaOk(false),
             'expired-callback': () => onCaptchaOk(false),
           });

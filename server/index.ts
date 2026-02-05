@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import puppeteer from 'puppeteer';
@@ -10,6 +11,41 @@ app.use(express.json({ limit: '4mb' }));
 
 app.get('/health', (_req, res) => {
   res.status(200).send('ok');
+});
+
+app.post('/turnstile/verify', async (req, res) => {
+  try {
+    const secret = process.env.TURNSTILE_SECRET_KEY;
+    if (!secret) {
+      res.status(500).json({ ok: false, error: 'Missing TURNSTILE_SECRET_KEY' });
+      return;
+    }
+    const token: string | undefined = req.body?.token;
+    if (!token || typeof token !== 'string') {
+      res.status(400).json({ ok: false, error: 'Missing token' });
+      return;
+    }
+
+    const form = new URLSearchParams();
+    form.set('secret', secret);
+    form.set('response', token);
+
+    const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form.toString(),
+    });
+
+    const data: any = await r.json().catch(() => ({}));
+    const success = Boolean(data?.success);
+    if (!success) {
+      res.status(200).json({ ok: false });
+      return;
+    }
+    res.status(200).json({ ok: true });
+  } catch (e: any) {
+    res.status(500).json({ ok: false, error: e?.message || 'verify failed' });
+  }
 });
 
 // Expect { html: string }

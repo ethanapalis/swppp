@@ -1,4 +1,4 @@
-# Appendix A Generator
+# A Generator
 
 - **Stack**: Vite + React + TypeScript, MapLibre GL JS, Express + Puppeteer (PDF), html2canvas + jsPDF fallback
 - **Default provider**: Open stack (OSM + MapTiler raster) with Nominatim geocoding

@@ -112,5 +112,5 @@ function buildFilename(hint?: string) {
   const m = String(date.getMonth()+1).padStart(2,'0');
   const d = String(date.getDate()).padStart(2,'0');
   const safe = (hint || 'Address').replace(/[^a-z0-9]+/gi,'_').slice(0,60);
-  return `SWPPP_AppendixA_Maps_${y}${m}${d}_${safe}.pdf`;
+  return `App A_Site Map_${y}-${m}-${d}_${safe}.pdf`;
 }

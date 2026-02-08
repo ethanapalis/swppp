@@ -51,7 +51,7 @@ export default function AddressForm(props: Props) {
         // bbox: [minLng, minLat, maxLng, maxLat]
         url.searchParams.set('bbox', '-124.48,32.53,-114.13,42.01');
         // proximity: lng,lat (roughly CA center)
-        url.searchParams.set('proximity', '-119.4179,36.7783');
+        url.searchParams.set('proximity', '-121.8863,37.3382');
         const res = await fetch(url.toString());
         if (!res.ok) throw new Error('autocomplete failed');
         const data = await res.json();

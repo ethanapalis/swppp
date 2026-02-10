@@ -11,6 +11,13 @@ function TurnstileWidget({ onOk, onStatus }:{ onOk: (ok: boolean) => void; onSta
   const siteKey = (import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined);
   const boxRef = React.useRef<HTMLDivElement | null>(null);
   const renderedRef = React.useRef(false);
+  const debug = (() => {
+    try {
+      return window.localStorage.getItem('debugCaptcha') === '1';
+    } catch {
+      return false;
+    }
+  })();
 
   React.useEffect(() => {
     if (!siteKey) return;
@@ -29,16 +36,28 @@ function TurnstileWidget({ onOk, onStatus }:{ onOk: (ok: boolean) => void; onSta
             try {
               const devBase = (import.meta.env.VITE_SERVER_BASE_URL as string | undefined);
               const verifyUrl = devBase ? `${devBase}/turnstile/verify` : `${window.location.origin}/api/turnstile/verify`;
+              if (debug) console.log('[turnstile] callback fired; verifyUrl=', verifyUrl);
               const res = await fetch(verifyUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token }),
               });
               const data: any = await res.json().catch(() => ({}));
+              if (debug) console.log('[turnstile] verify response', { status: res.status, ok: res.ok, data });
               const ok = Boolean(data?.ok);
               onOk(ok);
-              if (onStatus) onStatus(ok ? '' : 'Captcha verification failed');
-            } catch {
+              if (onStatus) {
+                if (ok) {
+                  onStatus('');
+                } else {
+                  const codes = Array.isArray(data?.errorCodes) ? data.errorCodes.join(', ') : '';
+                  const status = res.ok ? '' : `HTTP ${res.status}`;
+                  const detail = [status, codes].filter(Boolean).join(' • ');
+                  onStatus(detail ? `Captcha verification failed (${detail})` : 'Captcha verification failed');
+                }
+              }
+            } catch (e: any) {
+              if (debug) console.log('[turnstile] verify threw', e);
               onOk(false);
               if (onStatus) onStatus('Captcha verification failed');
             }

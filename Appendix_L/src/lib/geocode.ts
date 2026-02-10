@@ -1,4 +1,6 @@
-export async function geocodeAddress({ address, cityState }: { address: string; cityState?: string; }): Promise<{ coords: {lat:number; lng:number} }>{
+import { chooseVicinityZoom } from './zoomHeuristics';
+
+export async function geocodeAddress({ address, cityState }: { address: string; cityState?: string; }): Promise<{ coords: {lat:number; lng:number}; suggestedVicinityZoom?: number }>{
   const q = [address, cityState || ''].filter(Boolean).join(', ');
   const key = (import.meta.env.VITE_GEOCODIO_KEY as string | undefined);
   if (!key) {
@@ -16,5 +18,7 @@ export async function geocodeAddress({ address, cityState }: { address: string; 
   if (!result || typeof result.lat !== 'number' || typeof result.lng !== 'number') {
     throw new Error('Address not found');
   }
-  return { coords: { lat: result.lat, lng: result.lng } };
+  const coords = { lat: result.lat, lng: result.lng };
+  const suggestedVicinityZoom = await chooseVicinityZoom(coords);
+  return { coords, suggestedVicinityZoom };
 }

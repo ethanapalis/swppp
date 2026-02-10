@@ -5,6 +5,12 @@ type Props = {
   searchText: string;
   onSearchText: (v: string) => void;
 
+  showLatLongOnPdf: boolean;
+  onShowLatLongOnPdf: (v: boolean) => void;
+
+  projectTitle: string;
+  onProjectTitle: (v: string) => void;
+
   placeholder?: string;
 
   onPreview: () => void;
@@ -12,30 +18,54 @@ type Props = {
 };
 
 export default function AddressForm(props: Props) {
-  const { searchText, onSearchText, placeholder, onPreview, status } = props;
+  const { searchText, onSearchText, showLatLongOnPdf, onShowLatLongOnPdf, projectTitle, onProjectTitle, placeholder, onPreview, status } = props;
 
   return (
     <div className="form-grid">
       <div className="group">
         <div className="row" style={{ gap: 4 }}>
           <label>
-            ADDRESS <span style={{ color:'#9ca3af', fontWeight: 400 }}>(or Lat / Long)</span>
+            LAT / LONG
           </label>
           <textarea
             className="native-reset"
             rows={2}
             value={searchText}
             onChange={e=>onSearchText(e.target.value)}
-            placeholder={placeholder || 'Search for Address'}
+            placeholder={placeholder || 'Enter LAT / LONG'}
+          />
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 500 }}>
+            <input
+              type="checkbox"
+              checked={showLatLongOnPdf}
+              onChange={e => onShowLatLongOnPdf(e.target.checked)}
+            />
+            Show Lat / Long on PDF
+          </label>
+        </div>
+      </div>
+
+      <div className="group">
+        <div className="row" style={{ gap: 4 }}>
+          <label>
+            PROJECT NAME <span style={{ color:'#9ca3af', fontWeight: 400 }}>(optional)</span>
+          </label>
+          <input
+            className="native-reset"
+            value={projectTitle}
+            onChange={e=>onProjectTitle(e.target.value)}
+            placeholder="Add project name to PDF"
           />
         </div>
       </div>
 
       <div className="group">
         <div className="row">
-          <label>GIS LINKS</label>
-          <a href="https://gispublic.waterboards.ca.gov/portal/apps/webappviewer/index.html?id=d71546a521ed4829aaa0e6c7b245fd56" target="_blank" rel="noreferrer">LS Factor (State Water Board GIS)</a>
-          <a href="https://gispublic.waterboards.ca.gov/portal/apps/webappviewer/index.html?id=59bb6ae7996d415bb43d13420212a823" target="_blank" rel="noreferrer">K Factor (State Water Board GIS)</a>
+          <label>QUICK LINKS</label>
+          <a href="https://gispublic.waterboards.ca.gov/portal/apps/webappviewer/index.html?id=d71546a521ed4829aaa0e6c7b245fd56" target="_blank" rel="noreferrer">LS Factor (GIS, State Water Board)</a>
+          <a href="https://gispublic.waterboards.ca.gov/portal/apps/webappviewer/index.html?id=59bb6ae7996d415bb43d13420212a823" target="_blank" rel="noreferrer">K Factor (GIS, State Water Board)</a>
+          <a href="https://www.google.com/maps" target="_blank" rel="noreferrer">Google Maps</a>
         </div>
       </div>
 

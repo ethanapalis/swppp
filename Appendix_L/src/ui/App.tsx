@@ -10,7 +10,10 @@ type FactorResult = {
 
 export default function App() {
   const [searchText, setSearchText] = useState('');
+  const [projectTitle, setProjectTitle] = useState('');
+  const [showLatLongOnPdf, setShowLatLongOnPdf] = useState(false);
   const [status, setStatus] = useState<string>('');
+  const [flashSeq, setFlashSeq] = useState(0);
 
   const [ls, setLs] = useState<FactorResult | null>(null);
   const [k, setK] = useState<FactorResult | null>(null);
@@ -55,6 +58,7 @@ export default function App() {
       if (lsMissing || kMissing) {
         setStatus('Fetched values, but could not parse one or more factor values.');
       } else {
+        setFlashSeq(s => s + 1);
         setStatus('Fetching map images…');
       }
 
@@ -99,7 +103,11 @@ export default function App() {
           <AddressForm
             searchText={searchText}
             onSearchText={setSearchText}
-            placeholder={status === 'Fetching map images…' ? 'Fetching map images…' : 'Search for Address'}
+            showLatLongOnPdf={showLatLongOnPdf}
+            onShowLatLongOnPdf={setShowLatLongOnPdf}
+            projectTitle={projectTitle}
+            onProjectTitle={setProjectTitle}
+            placeholder={status === 'Fetching map images…' ? 'Fetching map images…' : 'Enter Lat / Long'}
             onPreview={handlePreview}
             status={status}
           />
@@ -109,8 +117,10 @@ export default function App() {
       <main className="content">
         <div className="preview">
           <PdfPreview
-            projectTitle=""
+            projectTitle={projectTitle}
             address={searchText}
+            showLatLongOnPdf={showLatLongOnPdf}
+            flashSeq={flashSeq}
             ls={ls}
             k={k}
           />

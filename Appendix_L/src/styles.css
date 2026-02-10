@@ -4,6 +4,19 @@ html, body, #root { height: 100%; margin: 0; font-family: 'IBM Plex Sans', sans-
 label { font-weight: 600; font-size: 14px; }
 input, textarea, select, button { font-family: inherit; font-size: 14px; }
 
+.value-flash {
+  display: inline-block;
+  padding: 1px 4px;
+  border-radius: 4px;
+  animation: valueFlash 1.2s ease-out;
+}
+
+@keyframes valueFlash {
+  0% { background: rgba(253, 230, 138, 0.95); }
+  35% { background: rgba(253, 230, 138, 0.95); }
+  100% { background: rgba(253, 230, 138, 0); }
+}
+
 .native-reset {
   width: 100%;
   display: block;
@@ -52,6 +65,8 @@ input, textarea, select, button { font-family: inherit; font-size: 14px; }
 .row { display: grid; gap: 8px; }
 .group { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; background: #ffffff; display: grid; gap: 12px; }
 
+.group a { font-size: 14px; }
+
 button { cursor: pointer; }
 .btn {
   display: inline-flex;
@@ -73,9 +88,9 @@ button { cursor: pointer; }
 
 /* Export button accent */
 .btn-export {
-  background: #399a50;
+  background: #23888E;
   color: #ffffff;
-  border-color: #399a50;
+  border-color: #23888E;
 }
 .btn-export:hover { filter: brightness(0.97); }
 .btn-export:active { filter: brightness(0.94); }
@@ -84,7 +99,7 @@ button { cursor: pointer; }
 .pdf-inner { padding: 48px; padding-bottom: 54px; display: grid; gap: 16px; }
 .pdf-header { font-weight: 700; margin-bottom: 8px; }
 .pdf-map { height: 410px; border: 1px solid #d1d5db; background: #f3f4f6; display: flex; align-items: center; justify-content: center; color: #6b7280; }
-.pdf-footer { position: absolute; left: 48px; right: 48px; bottom: 24px; font-size: 12px; color: #374151; text-align: center; }
+.pdf-footer { position: absolute; left: 48px; right: 48px; bottom: 20px; font-size: 12px; color: #374151; text-align: center; }
 
 .live-preview { margin-top: 16px; display: grid; gap: 10px; }
 .live-preview-title { font-weight: 700; color: #111827; }

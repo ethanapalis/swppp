@@ -33,7 +33,7 @@ function buildHtmlShell(inner: string) {
       .pdf-inner { padding: 48px; padding-bottom: 54px; display: grid; gap: 16px; }
       .pdf-header { font-weight: 700; margin-bottom: 8px; }
       .pdf-map { height: 410px; border: 1px solid #d1d5db; background: #f3f4f6; display: flex; align-items: center; justify-content: center; color: #6b7280; }
-      .pdf-footer { position: absolute; left: 48px; right: 48px; bottom: 24px; font-size: 10px; color: #374151; text-align: center; }
+      .pdf-footer { position: absolute; left: 48px; right: 48px; bottom: 20px; font-size: 10px; color: #374151; text-align: center; }
     </style>
   </head><body>${inner}</body></html>`;
 }
@@ -67,6 +67,6 @@ function buildFilename(hint?: string) {
   const y = String(date.getFullYear());
   const m = String(date.getMonth()+1).padStart(2,'0');
   const d = String(date.getDate()).padStart(2,'0');
-  const safe = (hint || 'Project').replace(/[^a-z0-9]+/gi,'_').slice(0,60);
-  return `Appendix_L_${y}-${m}-${d}_${safe}.pdf`;
+  void hint;
+  return `LS & K Factors_${y}-${m}-${d}.pdf`;
 }

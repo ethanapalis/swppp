@@ -8,9 +8,11 @@ type FactorResult = {
   basemapReferenceBase64?: string;
 };
 
-export default function PdfPreview({ projectTitle, address, ls, k }:{
+export default function PdfPreview({ projectTitle, address, showLatLongOnPdf, flashSeq, ls, k }:{
   projectTitle: string;
   address: string;
+  showLatLongOnPdf: boolean;
+  flashSeq: number;
   ls: FactorResult | null;
   k: FactorResult | null;
 }) {
@@ -18,6 +20,16 @@ export default function PdfPreview({ projectTitle, address, ls, k }:{
   const kValue = k?.value;
   const lsDisplay = lsValue === null || lsValue === undefined || String(lsValue).trim() === '' ? '—' : String(lsValue);
   const kDisplay = kValue === null || kValue === undefined || String(kValue).trim() === '' ? '—' : String(kValue);
+
+  function Crosshair() {
+    return (
+      <div style={{ position: 'absolute', left: '50%', top: '50%', width: 22, height: 22, transform: 'translate(-50%,-50%)', pointerEvents: 'none', zIndex: 6 }}>
+        <div style={{ position: 'absolute', left: '50%', top: 0, width: 2, height: '100%', transform: 'translateX(-50%)', background: 'rgba(17,24,39,0.65)' }} />
+        <div style={{ position: 'absolute', top: '50%', left: 0, height: 2, width: '100%', transform: 'translateY(-50%)', background: 'rgba(17,24,39,0.65)' }} />
+        <div style={{ position: 'absolute', left: '50%', top: '50%', width: 4, height: 4, transform: 'translate(-50%,-50%)', borderRadius: 99, background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(17,24,39,0.65)' }} />
+      </div>
+    );
+  }
 
   function renderMap(f: FactorResult, title: string) {
     const hasBasemap = Boolean(f.basemapBase64);
@@ -51,8 +63,10 @@ export default function PdfPreview({ projectTitle, address, ls, k }:{
             />
           ) : null}
 
+          <Crosshair />
+
           <div style={{ position: 'absolute', left: 12, top: 12, width: 230, pointerEvents: 'none' }}>
-            <div style={{ border: '1px solid #d1d5db', borderRadius: 4, overflow: 'hidden', background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+            <div style={{ border: '1px solid #d1d5db', borderRadius: 4, overflow: 'hidden', background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', fontFamily: 'Avenir, Avenir Next, Helvetica, Arial, sans-serif' }}>
               <div style={{ background: '#f3f4f6', borderBottom: '1px solid #e5e7eb', padding: '6px 8px', fontSize: 12, fontWeight: 600, color: '#111827' }}>
                 {popupTitle}
               </div>
@@ -81,11 +95,14 @@ export default function PdfPreview({ projectTitle, address, ls, k }:{
 
     if (f.screenshotBase64) {
       return (
-        <img
-          alt={`${title} Factor map`}
-          src={`data:image/jpeg;base64,${f.screenshotBase64}`}
-          style={{ width: '100%', height: 410, objectFit: 'cover', border: '1px solid #d1d5db' }}
-        />
+        <div style={{ position: 'relative', width: '100%', height: 410, border: '1px solid #d1d5db', overflow: 'hidden' }}>
+          <img
+            alt={`${title} Factor map`}
+            src={`data:image/jpeg;base64,${f.screenshotBase64}`}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+          <Crosshair />
+        </div>
       );
     }
 
@@ -99,12 +116,14 @@ export default function PdfPreview({ projectTitle, address, ls, k }:{
           <div style={{ fontSize: 18, fontWeight: 700 }} className="pdf-header">Length-Slope (LS) and Soil Erodibility (K) Factors</div>
           <div style={{ fontSize: 13.5, color: '#374151' }}>
             {projectTitle ? <div>Project: {projectTitle}</div> : null}
-            <div>Location: {address || '—'}</div>
+            {showLatLongOnPdf ? <div>Location: {address || '—'}</div> : null}
           </div>
         </div>
 
         <div>
-          <div style={{ fontWeight: 700, marginBottom: 6 }}>LS Factor: {lsDisplay}</div>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>
+            LS Factor: <span key={`ls-${flashSeq}`} className={flashSeq ? 'value-flash' : undefined}>{lsDisplay}</span>
+          </div>
           {ls?.screenshotBase64 ? (
             <div>{renderMap(ls, 'LS')}</div>
           ) : (
@@ -113,7 +132,9 @@ export default function PdfPreview({ projectTitle, address, ls, k }:{
         </div>
 
         <div>
-          <div style={{ fontWeight: 700, marginBottom: 6 }}>K Factor: {kDisplay}</div>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>
+            K Factor: <span key={`k-${flashSeq}`} className={flashSeq ? 'value-flash' : undefined}>{kDisplay}</span>
+          </div>
           {k?.screenshotBase64 ? (
             <div>{renderMap(k, 'K')}</div>
           ) : (

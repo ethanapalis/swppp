@@ -122,7 +122,7 @@ export default function App() {
   return (
     <div className="app">
       <aside className="sidebar">
-        <div className="sidebar-title">SWPPP App A Generator</div>
+        <div className="sidebar-title">SWPPP Appendix A Generator</div>
         <div className="form-grid">
           <AddressForm
             address={address}

@@ -121,6 +121,7 @@ export default function App() {
             address={searchText}
             showLatLongOnPdf={showLatLongOnPdf}
             flashSeq={flashSeq}
+            loadingMapPreviews={status === 'Fetching map images…'}
             ls={ls}
             k={k}
           />

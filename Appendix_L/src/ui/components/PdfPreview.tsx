@@ -8,11 +8,12 @@ type FactorResult = {
   basemapReferenceBase64?: string;
 };
 
-export default function PdfPreview({ projectTitle, address, showLatLongOnPdf, flashSeq, ls, k }:{
+export default function PdfPreview({ projectTitle, address, showLatLongOnPdf, flashSeq, loadingMapPreviews, ls, k }:{
   projectTitle: string;
   address: string;
   showLatLongOnPdf: boolean;
   flashSeq: number;
+  loadingMapPreviews: boolean;
   ls: FactorResult | null;
   k: FactorResult | null;
 }) {
@@ -127,7 +128,7 @@ export default function PdfPreview({ projectTitle, address, showLatLongOnPdf, fl
           {ls?.screenshotBase64 ? (
             <div>{renderMap(ls, 'LS')}</div>
           ) : (
-            <div className="pdf-map">LS Factor map capture placeholder</div>
+            <div className="pdf-map">{loadingMapPreviews ? 'Loading map previews...' : 'LS Factor map capture placeholder'}</div>
           )}
         </div>
 
@@ -138,7 +139,7 @@ export default function PdfPreview({ projectTitle, address, showLatLongOnPdf, fl
           {k?.screenshotBase64 ? (
             <div>{renderMap(k, 'K')}</div>
           ) : (
-            <div className="pdf-map">K Factor map capture placeholder</div>
+            <div className="pdf-map">{loadingMapPreviews ? 'Loading map previews...' : 'K Factor map capture placeholder'}</div>
           )}
         </div>
       </div>

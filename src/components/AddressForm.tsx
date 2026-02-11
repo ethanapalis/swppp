@@ -77,12 +77,12 @@ export default function AddressForm(props: Props) {
               rows={1}
               value={address}
               onChange={e=>onAddress(e.target.value)}
-              placeholder="1730 N First St, San Jose, CA 95112"
+              placeholder="Ex. 1730 N First St, San Jose, CA 95112"
               onFocus={()=>{ if (suggestions.length) setIsSuggesting(true); }}
               onBlur={()=>{ setTimeout(()=>setIsSuggesting(false), 120); }}
             />
             {isSuggesting && suggestions.length > 0 ? (
-              <div style={{ position:'absolute', zIndex: 20, left:0, right:0, top: '100%', marginTop:4, background:'#fff', border:'1px solid #e5e7eb', borderRadius:6, boxShadow:'0 6px 16px rgba(0,0,0,0.08)' }}>
+              <div style={{ position:'absolute', zIndex: 20, left:0, right:0, top: '100%', marginTop:4, background:'#fff', border:'1px solid #e9ebf0ff', borderRadius:6, boxShadow:'0 6px 16px rgba(0,0,0,0.08)' }}>
                 {suggestions.map(s => (
                   <button
                     key={s.id}
@@ -129,7 +129,7 @@ export default function AddressForm(props: Props) {
               setLatLngText(`${parsed.lat}, ${parsed.lng}`);
               setLatLngError('');
             }}
-            placeholder={`37.322587, -122.025648 or 37°19'21.3"N 122°01'32.3"W`}
+            placeholder={`Enter Decimal or DMS`}
           />
         </div>
       </div>

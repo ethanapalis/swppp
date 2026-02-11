@@ -34,7 +34,7 @@ function TurnstileWidget({ onOk, onStatus }:{ onOk: (ok: boolean) => void; onSta
           theme: 'light',
           callback: async (token: string) => {
             try {
-              const devBase = (import.meta.env.VITE_SERVER_BASE_URL as string | undefined);
+              const devBase = import.meta.env.DEV ? (import.meta.env.VITE_SERVER_BASE_URL as string | undefined) : undefined;
               const verifyUrl = devBase ? `${devBase}/turnstile/verify` : `${window.location.origin}/api/turnstile/verify`;
               if (debug) console.log('[turnstile] callback fired; verifyUrl=', verifyUrl);
               const res = await fetch(verifyUrl, {

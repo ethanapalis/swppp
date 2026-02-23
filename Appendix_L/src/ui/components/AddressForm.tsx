@@ -63,8 +63,8 @@ export default function AddressForm(props: Props) {
       <div className="group">
         <div className="row">
           <label>QUICK LINKS</label>
-          <a href="https://gispublic.waterboards.ca.gov/portal/apps/webappviewer/index.html?id=d71546a521ed4829aaa0e6c7b245fd56" target="_blank" rel="noreferrer">LS Factor (GIS, State Water Board)</a>
-          <a href="https://gispublic.waterboards.ca.gov/portal/apps/webappviewer/index.html?id=59bb6ae7996d415bb43d13420212a823" target="_blank" rel="noreferrer">K Factor (GIS, State Water Board)</a>
+          <a href="https://gispublic.waterboards.ca.gov/portal/apps/experiencebuilder/experience/?id=26961aabd2854bd7bfbb00328e45a059" target="_blank" rel="noreferrer">LS Factor (New Map GIS, State Water Board)</a>
+          <a href="https://gispublic.waterboards.ca.gov/portal/apps/experiencebuilder/experience/?id=4ca926e05dad42b1b6ca006b78584f6a" target="_blank" rel="noreferrer">K Factor (New Map GIS, State Water Board)</a>
           <a href="https://www.google.com/maps" target="_blank" rel="noreferrer">Google Maps</a>
         </div>
       </div>

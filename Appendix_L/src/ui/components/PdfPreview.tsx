@@ -128,7 +128,7 @@ export default function PdfPreview({ projectTitle, address, showLatLongOnPdf, fl
           {ls?.screenshotBase64 ? (
             <div>{renderMap(ls, 'LS')}</div>
           ) : (
-            <div className="pdf-map">{loadingMapPreviews ? 'Loading map previews...' : 'LS Factor map capture placeholder'}</div>
+            <div className="pdf-map">{loadingMapPreviews ? 'Loading map previews...' : 'Enter a Lat/Long to start'}</div>
           )}
         </div>
 
@@ -139,7 +139,7 @@ export default function PdfPreview({ projectTitle, address, showLatLongOnPdf, fl
           {k?.screenshotBase64 ? (
             <div>{renderMap(k, 'K')}</div>
           ) : (
-            <div className="pdf-map">{loadingMapPreviews ? 'Loading map previews...' : 'K Factor map capture placeholder'}</div>
+            <div className="pdf-map">{loadingMapPreviews ? 'Loading map previews...' : 'Enter a Lat/Long to start'}</div>
           )}
         </div>
       </div>

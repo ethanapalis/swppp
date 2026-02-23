@@ -280,8 +280,8 @@ async function exportMapImage(service: ArcGisServiceInfo, pt: { lat: number; lng
   }
   const exportUrl = `${withNoTrailingSlash(exportBase)}/export`;
 
-  const widthPx = 1600;
-  const heightPx = 924;
+  const widthPx = 1200;
+  const heightPx = 693;
   const { xmin, ymin, xmax, ymax } = buildBboxWebMercatorAspect(pt, 2100, widthPx, heightPx);
 
   const u = new URL(exportUrl);
@@ -291,13 +291,13 @@ async function exportMapImage(service: ArcGisServiceInfo, pt: { lat: number; lng
   u.searchParams.set('imageSR', '3857');
   u.searchParams.set('size', `${widthPx},${heightPx}`);
   // Return transparent overlay so client can layer over a basemap
-  u.searchParams.set('format', 'png32');
+  u.searchParams.set('format', 'png8');
   u.searchParams.set('transparent', 'true');
   // Only filter layers when we have a concrete sublayer id; a wrong id can hide everything.
   if (Number.isFinite(service.layerId) && service.layerId >= 0) {
     u.searchParams.set('layers', `show:${service.layerId}`);
   }
-  u.searchParams.set('dpi', '144');
+  u.searchParams.set('dpi', '110');
 
   const res = await fetchWithTimeout(u.toString(), undefined, 20_000);
   if (!res.ok) throw new Error(`export failed HTTP ${res.status}`);
@@ -311,8 +311,8 @@ async function exportMapImage(service: ArcGisServiceInfo, pt: { lat: number; lng
 }
 
 async function exportEsriBasemap(pt: { lat: number; lng: number }) {
-  const widthPx = 1600;
-  const heightPx = 924;
+  const widthPx = 1200;
+  const heightPx = 693;
   const { xmin, ymin, xmax, ymax } = buildBboxWebMercatorAspect(pt, 2100, widthPx, heightPx);
 
   const baseExportUrl = 'https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/export';
@@ -327,9 +327,9 @@ async function exportEsriBasemap(pt: { lat: number; lng: number }) {
     u.searchParams.set('size', `${widthPx},${heightPx}`);
     u.searchParams.set('format', opts.format);
     u.searchParams.set('transparent', opts.transparent);
-    u.searchParams.set('dpi', '144');
+    u.searchParams.set('dpi', '110');
     if (opts.format.toLowerCase().includes('jpg')) {
-      u.searchParams.set('compressionQuality', '85');
+      u.searchParams.set('compressionQuality', '70');
     }
     return u;
   };
@@ -479,8 +479,8 @@ app.post('/api/fetch-factors', async (req, res) => {
       return;
     }
 
-    const lsItemId = 'd71546a521ed4829aaa0e6c7b245fd56';
-    const kItemId = '59bb6ae7996d415bb43d13420212a823';
+    const lsItemId = '26961aabd2854bd7bfbb00328e45a059';
+    const kItemId = '4ca926e05dad42b1b6ca006b78584f6a';
 
     const [lsSvc, kSvc] = await Promise.all([
       resolveServiceFromWebAppItem(lsItemId, 'LS'),

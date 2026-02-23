@@ -28,7 +28,7 @@ function buildHtmlShell(inner: string) {
     <style>
       @page { size: 8.5in 11in; margin: 0; }
       * { box-sizing: border-box; }
-      html, body { margin: 0; font-family: Arial, sans-serif; }
+      html, body { margin: 0; font-family: Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .pdf-page { width: 816px; height: 1056px; margin: 0 auto; background: #fff; color: #111827; position: relative; border: 1px solid #e5e7eb; }
       .pdf-inner { padding: 48px; padding-bottom: 54px; display: grid; gap: 16px; }
       .pdf-header { font-weight: 700; margin-bottom: 8px; }
@@ -55,10 +55,10 @@ export async function exportPdf({ rootEl, filenameHint }:{ rootEl: HTMLElement; 
     return;
   }
 
-  const canvas = await html2canvas(rootEl, { scale: 2, useCORS: true });
-  const imgData = canvas.toDataURL('image/png');
+  const canvas = await html2canvas(rootEl, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+  const imgData = canvas.toDataURL('image/jpeg', 0.86);
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'in', format: 'letter' });
-  pdf.addImage(imgData, 'PNG', 0, 0, 8.5, 11);
+  pdf.addImage(imgData, 'JPEG', 0, 0, 8.5, 11);
   pdf.save(buildFilename(filenameHint));
 }
 

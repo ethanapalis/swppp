@@ -56,9 +56,9 @@ export async function exportPdf({ rootEl, filenameHint }:{ rootEl: HTMLElement; 
   }
 
   const canvas = await html2canvas(rootEl, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-  const imgData = canvas.toDataURL('image/jpeg', 0.86);
+  const imgData = canvas.toDataURL('image/png');
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'in', format: 'letter' });
-  pdf.addImage(imgData, 'JPEG', 0, 0, 8.5, 11);
+  pdf.addImage(imgData, 'PNG', 0, 0, 8.5, 11);
   pdf.save(buildFilename(filenameHint));
 }
 

@@ -231,8 +231,14 @@ async function resolveServiceFromWebAppItem(itemId: string, factorKey: 'LS' | 'K
     const title = String(l?.title || l?.name || l?.id || '');
     return factorPatterns.some(p => p.test(title) || p.test(url));
   };
+  const matchesAvoid = (l: any) => {
+    const url = typeof l?.url === 'string' ? l.url : '';
+    const title = String(l?.title || l?.name || l?.id || '');
+    return avoidPatterns.some(p => p.test(title) || p.test(url));
+  };
   const preferred = candidates.filter(matchesFactor);
-  const pickFrom = preferred.length ? preferred : candidates;
+  const nonAvoid = candidates.filter(l => !matchesAvoid(l));
+  const pickFrom = preferred.length ? preferred : (nonAvoid.length ? nonAvoid : candidates);
   const op = pickFrom
     .slice()
     .sort((a, b) => scoreLayer(a) - scoreLayer(b))

@@ -56,13 +56,55 @@ async function fetchWithTimeout(url: string, init: RequestInit | undefined, time
 }
 
 async function fetchJson(url: string) {
-  const res = await fetchWithTimeout(url, undefined, 15_000);
+  const isQuery = /\/query\b/i.test(url);
+  const timeoutMs = isQuery ? 30_000 : 20_000;
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(url, undefined, timeoutMs);
+  } catch (e: any) {
+    if (isQuery) {
+      await new Promise(r => setTimeout(r, 400));
+      res = await fetchWithTimeout(url, undefined, 45_000);
+    } else {
+      throw e;
+    }
+  }
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
   try {
     return await res.json();
   } catch (e: any) {
     throw new Error(`failed to parse json for ${url}: ${e?.message || String(e)}`);
   }
+}
+
+async function tryResolveRelatedWebmapItemId(appItemId: string) {
+  const relTypes = ['Maps2WebApp', 'WebMap2App', 'Map2App'];
+  for (const rt of relTypes) {
+    try {
+      const relUrl = `${portalBase}/sharing/rest/content/items/${appItemId}/relatedItems?f=json&relationshipType=${encodeURIComponent(rt)}&direction=forward`;
+      const rel = await fetchJson(relUrl);
+      const relItems: any[] = Array.isArray(rel?.relatedItems) ? rel.relatedItems : [];
+      const found = relItems.find(it => String(it?.type || '').toLowerCase() === 'web map');
+      if (found?.id) return String(found.id);
+    } catch {
+      // ignore
+    }
+  }
+  return undefined;
+}
+
+async function tryResolveWebmapFromEmbeddedIds(item: any, data: any) {
+  const s = JSON.stringify({ item, data });
+  const ids = Array.from(new Set((s.match(/[0-9a-f]{32}/gi) || []).map(x => x.toLowerCase())));
+  for (const id of ids) {
+    try {
+      const candidate = await fetchJson(`${portalBase}/sharing/rest/content/items/${id}?f=json`);
+      if (String(candidate?.type || '').toLowerCase() === 'web map') return id;
+    } catch {
+      // ignore
+    }
+  }
+  return undefined;
 }
 
 function toWebMercator(pt: { lat: number; lng: number }) {
@@ -128,16 +170,40 @@ async function resolveServiceFromWebAppItem(itemId: string, factorKey: 'LS' | 'K
     item?.properties?.webmap ||
     undefined;
 
-  if (!webmapItemId) {
+  const resolvedWebmapItemId = webmapItemId
+    || await tryResolveRelatedWebmapItemId(itemId)
+    || await tryResolveWebmapFromEmbeddedIds(item, data);
+
+  if (!resolvedWebmapItemId) {
     throw new Error(`Could not resolve webmap for ${factorKey} item ${itemId}`);
   }
 
-  const webmapDataUrl = `${portalBase}/sharing/rest/content/items/${webmapItemId}/data?f=json`;
+  const webmapDataUrl = `${portalBase}/sharing/rest/content/items/${resolvedWebmapItemId}/data?f=json`;
   const webmapData = await fetchJson(webmapDataUrl);
   const ops: any[] = Array.isArray(webmapData?.operationalLayers) ? webmapData.operationalLayers : [];
 
-  // Pick the first operational layer with a url to a MapServer/FeatureServer
-  const op = ops.find(l => typeof l?.url === 'string' && /\/MapServer\b|\/FeatureServer\b/i.test(l.url));
+  const factorPatterns: RegExp[] = factorKey === 'K'
+    ? [/soil\s*erod/i, /erod/i, /\bK\b/i, /k\s*factor/i]
+    : [/linear\s*slope/i, /length\s*slope/i, /\bLS\b/i, /ls\s*factor/i];
+  const scoreLayer = (l: any) => {
+    const url = typeof l?.url === 'string' ? l.url : '';
+    const title = String(l?.title || l?.name || l?.id || '');
+    let s = 1000;
+    if (/\/MapServer\b/i.test(url)) s -= 200;
+    if (/\/FeatureServer\b/i.test(url)) s -= 50;
+    for (let i = 0; i < factorPatterns.length; i++) {
+      if (factorPatterns[i].test(title)) { s -= (400 - i * 40); break; }
+    }
+    // Prefer layers that declare sublayers (tends to be the thematic layer)
+    if (Array.isArray(l?.layers) && l.layers.length) s -= 30;
+    return s;
+  };
+
+  const op = ops
+    .filter(l => typeof l?.url === 'string' && /\/MapServer\b|\/FeatureServer\b/i.test(l.url))
+    .slice()
+    .sort((a, b) => scoreLayer(a) - scoreLayer(b))
+    [0];
   if (!op?.url) {
     throw new Error(`Could not find operational layer url for ${factorKey} webmap ${webmapItemId}`);
   }
@@ -222,6 +288,7 @@ async function queryValueAtPoint(service: ArcGisServiceInfo, factorKey: 'LS' | '
     }
     if (/\bid\b/i.test(k) || /_?id$/i.test(k)) s += 500;
     if (isOidLike(k)) s += 1000;
+    if (/shape|area|length|perimeter/i.test(k)) s += 800;
 
     const n = typeof v === 'number' ? v : Number(String(v).trim());
     if (Number.isFinite(n)) {
@@ -229,6 +296,9 @@ async function queryValueAtPoint(service: ArcGisServiceInfo, factorKey: 'LS' | '
       if (n >= 0 && n <= 1) s -= 30;
       // Strongly penalize very large integers which are usually IDs.
       if (Number.isInteger(n) && n > 1000) s += 200;
+      // Penalize large continuous values which are often areas/lengths.
+      if (n > 100) s += 250;
+      if (n > 50) s += 800;
       if (n > 1 && n <= 10) s += 10;
     }
     return s;
@@ -280,8 +350,8 @@ async function exportMapImage(service: ArcGisServiceInfo, pt: { lat: number; lng
   }
   const exportUrl = `${withNoTrailingSlash(exportBase)}/export`;
 
-  const widthPx = 1600;
-  const heightPx = 924;
+  const widthPx = 1200;
+  const heightPx = 693;
   const { xmin, ymin, xmax, ymax } = buildBboxWebMercatorAspect(pt, 2100, widthPx, heightPx);
 
   const u = new URL(exportUrl);
@@ -291,16 +361,16 @@ async function exportMapImage(service: ArcGisServiceInfo, pt: { lat: number; lng
   u.searchParams.set('imageSR', '3857');
   u.searchParams.set('size', `${widthPx},${heightPx}`);
   // Return transparent overlay so client can layer over a basemap
-  u.searchParams.set('format', 'png32');
+  u.searchParams.set('format', 'png8');
   u.searchParams.set('transparent', 'true');
   // Only filter layers when we have a concrete sublayer id; a wrong id can hide everything.
   if (Number.isFinite(service.layerId) && service.layerId >= 0) {
     u.searchParams.set('layers', `show:${service.layerId}`);
   }
-  u.searchParams.set('dpi', '144');
+  u.searchParams.set('dpi', '110');
 
   const res = await fetchWithTimeout(u.toString(), undefined, 20_000);
-  if (!res.ok) throw new Error(`export failed HTTP ${res.status}`);
+  if (!res.ok) throw new Error(`export failed HTTP ${res.status} url=${u.toString()}`);
   const ct = (res.headers.get('content-type') || '').toLowerCase();
   const buf = Buffer.from(await res.arrayBuffer());
   if (!ct.startsWith('image/')) {
@@ -311,8 +381,8 @@ async function exportMapImage(service: ArcGisServiceInfo, pt: { lat: number; lng
 }
 
 async function exportEsriBasemap(pt: { lat: number; lng: number }) {
-  const widthPx = 1600;
-  const heightPx = 924;
+  const widthPx = 1200;
+  const heightPx = 693;
   const { xmin, ymin, xmax, ymax } = buildBboxWebMercatorAspect(pt, 2100, widthPx, heightPx);
 
   const baseExportUrl = 'https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/export';
@@ -327,9 +397,9 @@ async function exportEsriBasemap(pt: { lat: number; lng: number }) {
     u.searchParams.set('size', `${widthPx},${heightPx}`);
     u.searchParams.set('format', opts.format);
     u.searchParams.set('transparent', opts.transparent);
-    u.searchParams.set('dpi', '144');
+    u.searchParams.set('dpi', '110');
     if (opts.format.toLowerCase().includes('jpg')) {
-      u.searchParams.set('compressionQuality', '85');
+      u.searchParams.set('compressionQuality', '70');
     }
     return u;
   };
@@ -479,8 +549,8 @@ app.post('/api/fetch-factors', async (req, res) => {
       return;
     }
 
-    const lsItemId = 'd71546a521ed4829aaa0e6c7b245fd56';
-    const kItemId = '59bb6ae7996d415bb43d13420212a823';
+    const lsItemId = '26961aabd2854bd7bfbb00328e45a059';
+    const kItemId = '4ca926e05dad42b1b6ca006b78584f6a';
 
     const [lsSvc, kSvc] = await Promise.all([
       resolveServiceFromWebAppItem(lsItemId, 'LS'),

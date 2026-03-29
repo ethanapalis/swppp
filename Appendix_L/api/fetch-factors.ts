@@ -137,21 +137,53 @@ async function resolveServiceFromWebAppItem(itemId: string, factorKey: 'LS' | 'K
   const factorPatterns: RegExp[] = factorKey === 'K'
     ? [/soil\s*erod/i, /erod/i, /\bK\b/i, /k\s*factor/i]
     : [/linear\s*slope/i, /length\s*slope/i, /\bLS\b/i, /ls\s*factor/i];
+  const avoidPatterns: RegExp[] = [
+    /\bhuc\b/i,
+    /watershed/i,
+    /hydrolog/i,
+    /stream/i,
+    /river/i,
+    /lake/i,
+    /county/i,
+    /state\s*boundary/i,
+    /boundary/i,
+    /outline/i,
+    /grid/i,
+    /reference/i,
+    /basemap/i,
+  ];
   const scoreLayer = (l: any) => {
     const url = typeof l?.url === 'string' ? l.url : '';
     const title = String(l?.title || l?.name || l?.id || '');
     let s = 1000;
     if (/\/MapServer\b/i.test(url)) s -= 200;
     if (/\/FeatureServer\b/i.test(url)) s -= 50;
+    let matchedFactor = false;
     for (let i = 0; i < factorPatterns.length; i++) {
-      if (factorPatterns[i].test(title)) { s -= (400 - i * 40); break; }
+      if (factorPatterns[i].test(title) || factorPatterns[i].test(url)) {
+        s -= (550 - i * 60);
+        matchedFactor = true;
+        break;
+      }
     }
+    for (const p of avoidPatterns) {
+      if (p.test(title) || p.test(url)) { s += 900; break; }
+    }
+    if (!matchedFactor) s += 500;
     if (Array.isArray(l?.layers) && l.layers.length) s -= 30;
     return s;
   };
 
-  const op = ops
-    .filter(l => typeof l?.url === 'string' && /\/MapServer\b|\/FeatureServer\b/i.test(l.url))
+  const candidates = ops
+    .filter(l => typeof l?.url === 'string' && /\/MapServer\b|\/FeatureServer\b/i.test(l.url));
+  const matchesFactor = (l: any) => {
+    const url = typeof l?.url === 'string' ? l.url : '';
+    const title = String(l?.title || l?.name || l?.id || '');
+    return factorPatterns.some(p => p.test(title) || p.test(url));
+  };
+  const preferred = candidates.filter(matchesFactor);
+  const pickFrom = preferred.length ? preferred : candidates;
+  const op = pickFrom
     .slice()
     .sort((a, b) => scoreLayer(a) - scoreLayer(b))
     [0];

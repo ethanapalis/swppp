@@ -81,6 +81,26 @@ async function tryResolveWebmapFromEmbeddedIds(item: any, data: any) {
   return undefined;
 }
 
+function tryResolveWebmapFromExperienceBuilderData(data: any, factorKey: 'LS' | 'K') {
+  const dss = data?.dataSources && typeof data.dataSources === 'object' ? Object.values(data.dataSources) : [];
+  const patterns: RegExp[] = factorKey === 'K'
+    ? [/soil\s*erod/i, /erod/i, /\bK\b/i, /k\s*factor/i]
+    : [/length\s*-?\s*slope/i, /linear\s*slope/i, /\bLS\b/i, /ls\s*factor/i];
+  let best: { id: string; score: number } | null = null;
+  for (const ds of dss as any[]) {
+    if (!ds || String(ds?.type || '').toUpperCase() !== 'WEB_MAP') continue;
+    const id = typeof ds?.itemId === 'string' ? ds.itemId : undefined;
+    if (!id) continue;
+    const label = String(ds?.sourceLabel || ds?.label || '');
+    let score = 1000;
+    for (let i = 0; i < patterns.length; i++) {
+      if (patterns[i].test(label)) { score -= (550 - i * 60); break; }
+    }
+    if (!best || score < best.score) best = { id, score };
+  }
+  return best?.id;
+}
+
 function parseLatLngText(v: string): { lat: number; lng: number } | null {
   const m = v.trim().match(/^\s*([-+]?\d+(?:\.\d+)?)\s*,\s*([-+]?\d+(?:\.\d+)?)\s*$/);
   if (!m) return null;
@@ -123,6 +143,7 @@ async function resolveServiceFromWebAppItem(itemId: string, factorKey: 'LS' | 'K
     undefined;
 
   const resolvedWebmapItemId = webmapItemId
+    || tryResolveWebmapFromExperienceBuilderData(data, factorKey)
     || await tryResolveRelatedWebmapItemId(itemId)
     || await tryResolveWebmapFromEmbeddedIds(item, data);
 
